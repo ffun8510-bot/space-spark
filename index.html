@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Spark: A Space Weather Story</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            touch-action: pan-y;
+        }
+        .storybook-page { display: none; }
+        .storybook-page.active { display: block; }
+        .fade-in { animation: fadeIn 0.5s; }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            position: relative;
+            background-color: #2d3748; /* gray-800 */
+            margin: 15% auto;
+            padding: 2rem;
+            border: 1px solid #4a5568; /* gray-700 */
+            width: 80%;
+            max-width: 500px;
+            border-radius: 1rem;
+            text-align: center;
+        }
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .info-icon {
+             display: inline-block;
+             width: 24px;
+             height: 24px;
+             background-color: #f6e05e; /* yellow-400 */
+             color: #1a202c; /* gray-900 */
+             border-radius: 50%;
+             text-align: center;
+             font-weight: bold;
+             cursor: pointer;
+             line-height: 24px;
+             margin-left: 8px;
+             transition: transform 0.2s;
+        }
+        .info-icon:hover {
+            transform: scale(1.1);
+        }
+        /* Gemini Chat Styles */
+        .chat-bubble {
+            padding: 0.75rem 1rem;
+            border-radius: 1.5rem;
+            max-width: 80%;
+            margin-bottom: 0.5rem;
+        }
+        .user-bubble {
+            background-color: #4299e1; /* blue-500 */
+            align-self: flex-end;
+            border-bottom-right-radius: 0.5rem;
+        }
+        .sunny-bubble {
+            background-color: #f6e05e; /* yellow-400 */
+            color: #1a202c; /* gray-900 */
+            align-self: flex-start;
+            border-bottom-left-radius: 0.5rem;
+        }
+        /* Spinner for loading */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #f6e05e;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .nasa-link-icon {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0OCIgZmlsbD0iIzAzMTVjZSIvPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0zMi44IDQ0LjJjLTIuMSAwLTMuOS44LTUuNCAyLjVsLTIuMiAyLjFjLTEuNSAxLjUtMi4yIDMuMy0yLjIgNS40IDAgMS40LjQgMi45IDEuMyA0LjVsNC40IDcuMmMxLjEgMS43IDIuNiAzIDQuMyA0IDIgMS4yIDQgMS42IDUuOCAxLjZzMy44LS41IDUuOC0xLjljMy45LTIuNiA1LjQtNy4zIDQuMy0xMS44bC0xLjYtNi43Yy0uOC0zLjMtMy4xLTUuNi02LjQtNS42aC0uMXptMTcuMiAxMS40Yy0uMS0yLjYtMi4yLTQuOC00LjgtNC44cy00LjggMi4yLTQuOCA0LjhjMCAyLjYgMi4yIDQuOCA0LjggNC44czQuOC0yLjEgNC44LTQuOHptNDIgMTguMmMtMTUgMy45LTIuNS40LTExLjQtMTYuNi0yMy4zIDMuOC01LjIgMTIuMy03IDE3LTQuOHM3IDEyLjMgNC44IDE3Yy0xLjIgMi43LTMuNSAzLjktNi4yIDYuMVptLTY1LTM0YzguOC0xMiAyMy45LTE1LjQgMzUuOC02LjZzMTUuNCAyMy45IDYuNiAzNS45Yy04LjggMTItMjMuOSAxNS40LTM1LjggNi42LTExLjktOC45LTE1LjQtMjMuOS02LjYtMzUuOVoiLz48cGF0aCBmaWxsPSIjZmMzOTI1IiBkPSJNNTMuNyA1OS40Yy0yLjgtLjgtNC40IDMuMS0yLjQgNS42IDEuNCAxLjYgMy45IDEuOCA1LjYuNSAyLjgtMi4xIDEuNi01LjItMy4yLTYuMVoiLz48L3N2Zz4=');
+            background-size: contain;
+            background-repeat: no-repeat;
+            cursor: pointer;
+            transition: transform 0.2s;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+         .nasa-link-icon:hover {
+            transform: scale(1.2);
+        }
+        .resource-page-content {
+            overflow-y: auto;
+            height: 100%;
+            padding: 2rem;
+            text-align: left;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4 overflow-hidden">
+
+    <div class="w-full max-w-4xl mx-auto bg-gray-800 rounded-2xl shadow-2xl overflow-hidden relative" style="aspect-ratio: 16/10;">
+        <div id="storybook-container" class="w-full h-full">
+
+            <!-- Page 1: Title Page -->
+            <div class="storybook-page active fade-in" data-page="1">
+                <div class="flex flex-col items-center justify-center h-full text-center p-8 bg-cover bg-center" style="background-image: url('https://placehold.co/1280x800/0a0a2a/ffffff?text=Starry+Background');">
+                    <h1 class="text-4xl md:text-6xl font-black text-yellow-300 drop-shadow-lg">Space Spark</h1>
+                    <p class="mt-4 text-lg md:text-2xl text-gray-200">A Space Weather Story</p>
+                    <img src="https://placehold.co/400x300/transparent/yellow?text=Illustration:+Cheerful+Solar+Flare+'Sunny'" alt="Sunny the Solar Flare" class="mt-8 w-1/3 max-w-xs">
+                </div>
+            </div>
+
+            <!-- Page 2: Introduction for Parents/Teachers -->
+            <div class="storybook-page fade-in" data-page="2">
+                <div class="flex flex-col justify-center h-full p-8 md:p-12 text-gray-300 text-center">
+                    <h2 class="text-2xl md:text-3xl font-bold text-yellow-300">Why this story?</h2>
+                    <p class="mt-4 text-base md:text-lg">Space weather is a big, complex topic. Concepts like solar flares are abstract, their effects are often invisible, and the science can be intimidating for kids.</p>
+                    <p class="mt-4 text-base md:text-lg">This story bridges that gap! By following a friendly character, children can learn how events 93 million miles away can affect their world in a simple, visual, and relatable way.</p>
+                </div>
+            </div>
+
+            <!-- Page 3: Introducing Sunny -->
+            <div class="storybook-page fade-in" data-page="3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center h-full p-8">
+                    <img src="https://placehold.co/600x400/1f2937/ffffff?text=Illustration:+Sunny+on+the+Sun" alt="Sunny on the Sun" class="rounded-lg w-full h-auto">
+                    <div class="text-gray-300 text-lg">
+                        <p>Far, far away, on the big, bright Sun, lived a happy little spark of energy named Sunny. Sunny was a solar flare, and loved to dance and leap with fiery glee!</p>
+                        <p class="mt-4">"Whee!" giggled Sunny. "I love to sparkle!"</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page 4: The Big Leap -->
+            <div class="storybook-page fade-in" data-page="4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center h-full p-8">
+                     <div class="text-gray-300 text-lg md:order-2">
+                        <p>One day, Sunny leaped higher than ever before! With a giant WHOOSH, Sunny burst off the Sun and zoomed into the vast, dark expanse of space.</p>
+                        <p class="mt-4">"Wow! I'm on an adventure!" Sunny exclaimed, zipping past planets and stars.</p>
+                    </div>
+                    <img src="https://placehold.co/600x400/1f2937/ffffff?text=Illustration:+Sunny+leaping+into+space" alt="Sunny leaping into space" class="rounded-lg w-full h-auto md:order-1">
+                </div>
+            </div>
+
+            <!-- Page 5: Approaching Earth -->
+            <div class="storybook-page fade-in" data-page="5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center h-full p-8">
+                    <img src="https://placehold.co/600x400/1f2937/ffffff?text=Illustration:+Sunny+sees+Earth" alt="Sunny sees Earth from space" class="rounded-lg w-full h-auto">
+                    <div class="text-gray-300 text-lg">
+                        <p>Soon, Sunny saw a beautiful blue and green marble ahead. It was Earth! Sunny didn't know it, but this big arrival was called "space weather."</p>
+                        <p class="mt-4">As Sunny got closer, strange things began to happen...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page 6: Impact on Astronauts and Pilots -->
+            <div class="storybook-page fade-in" data-page="6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center h-full p-8">
+                     <div class="text-gray-300 text-lg md:order-2">
+                        <p>An astronaut had to go inside for safety.
+                           <span class="info-icon" data-modal="astronaut-modal">i</span>
+                        </p>
+                        <p class="mt-4">A pilot's radio went fuzzy. "Bzz... crrrk... Hello?"
+                           <span class="info-icon" data-modal="radio-modal">i</span>
+                        </p>
+                        <p class="mt-4">Sunny's energy was making the signals tricky!</p>
+                    </div>
+                    <img src="https://placehold.co/600x400/1f2937/ffffff?text=Illustration:+Airplane+and+Space+Station" alt="Airplane and Space Station" class="rounded-lg w-full h-auto md:order-1">
+                </div>
+            </div>
+            
+            <!-- Page 7: Impact on Farmers -->
+            <div class="storybook-page fade-in" data-page="7">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center h-full p-8">
+                    <img src="https://placehold.co/600x400/1f2937/ffffff?text=Illustration:+Farmer+with+a+tractor+and+GPS" alt="Farmer looking at a GPS screen" class="rounded-lg w-full h-auto">
+                    <div class="text-gray-300 text-lg">
+                        <p>Down on the ground, a farmer named Lily looked at her tractor's GPS screen. "Oh dear," she said. "The map is all wobbly!"
+                           <span class="info-icon" data-modal="gps-modal">i</span>
+                           <span class="nasa-link-icon" title="Learn more at NASA" onclick="showPage(11)"></span>
+                        </p>
+                        <p class="mt-4">Sunny's space weather was tickling the satellites that help us find our way.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page 8: Impact on Power Grids -->
+            <div class="storybook-page fade-in" data-page="8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center h-full p-8">
+                    <div class="text-gray-300 text-lg md:order-2">
+                        <p>Even the lights in the city flickered for a moment! A big burst of energy like Sunny can sometimes give Earth's power grid a little shake.</p>
+                        <p class="mt-4">Luckily, clever engineers work hard to keep our lights on!</p>
+                    </div>
+                    <img src="https://placehold.co/600x400/1f2937/ffffff?text=Illustration:+City+skyline+at+dusk" alt="City with flickering lights" class="rounded-lg w-full h-auto md:order-1">
+                </div>
+            </div>
+
+            <!-- Page 9: The Aurora -->
+            <div class="storybook-page fade-in" data-page="9">
+                <div class="flex flex-col items-center justify-center h-full text-center p-8 bg-cover bg-center" style="background-image: url('https://placehold.co/1280x800/0a0a2a/ffffff?text=Beautiful+Aurora+Borealis');">
+                    <div class="bg-black bg-opacity-50 p-6 rounded-lg">
+                        <h2 class="text-3xl md:text-4xl font-bold text-green-300">A Magical Light Show!</h2>
+                        <p class="mt-4 text-lg text-gray-200">But Sunny's energy did something beautiful, too! When it danced with the top of the Earth, it created a magical, glowing light show in the sky called the Aurora.
+                           <span class="nasa-link-icon" title="Learn more at NASA" onclick="showPage(11)"></span>
+                        </p>
+                        <p class="mt-4 text-lg text-gray-200">Everyone looked up in wonder. Sunny had brought a little bit of the Sun's magic to Earth.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page 10: Conclusion & Gemini Feature -->
+             <div class="storybook-page fade-in" data-page="10">
+                <div class="flex flex-col h-full p-4 md:p-6">
+                    <div class="text-center">
+                        <h2 class="text-2xl md:text-3xl font-bold text-yellow-300">The Adventure Continues!</h2>
+                        <p class="mt-2 text-md text-gray-200">Keep looking up and stay curious!</p>
+                    </div>
+                    <div class="mt-4 flex-grow bg-gray-900/50 rounded-lg p-3 flex flex-col">
+                        <h3 class="text-lg font-bold text-center">✨ Ask Sunny a Question!</h3>
+                        <div id="chat-container" class="flex-grow overflow-y-auto p-2 flex flex-col space-y-2">
+                            <!-- Chat messages will appear here -->
+                        </div>
+                        <div id="chat-loading" class="hidden justify-center items-center p-2">
+                            <div class="loader"></div>
+                        </div>
+                        <div class="mt-2 flex">
+                            <input type="text" id="chat-input" class="w-full bg-gray-700 rounded-l-full px-4 py-2 focus:outline-none" placeholder="Ask about the Sun, stars, or auroras...">
+                            <button id="chat-send" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-4 py-2 rounded-r-full">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Page 11: NASA Data Page -->
+            <div class="storybook-page fade-in" data-page="11">
+                <div class="resource-page-content">
+                    <h2 class="text-2xl md:text-3xl font-bold text-yellow-300 text-center">🚀 Explore with NASA & Partners!</h2>
+                    <p class="text-xs text-gray-400 mt-4 text-center">NASA does not endorse any non-U.S. Government entity and is not responsible for information contained on non-U.S. Government websites.</p>
+                    
+                    <h3 class="text-xl font-bold text-yellow-200 mt-6 mb-3">NASA Data & Resources</h3>
+                    <div class="space-y-2 text-sm">
+                        <a href="https://science.nasa.gov/heliophysics/space-weather/" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">NASA Space Weather Website</a>
+                        <a href="https://science.nasa.gov/solar-system/sun/solar-storms-and-flares/" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">Solar Storms and Flares</a>
+                        <a href="https://science.nasa.gov/heliophysics/advisory-committees/swag/" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">Survey of User Needs for Space Weather (SWAG)</a>
+                        <a href="https://www.nasa.gov/solar-system/sun/nasa-selects-new-space-weather-centers-of-excellence/" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">Space Weather Centers of Excellence</a>
+                        <a href="https://science.nasa.gov/heliophysics/missions/" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">NASA Heliophysics Fleet</a>
+                        <a href="https://www.swpc.noaa.gov/" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">NOAA Space Weather Prediction Center</a>
+                        <a href="https://www.youtube.com/watch?v=s_JUn-q0bSg" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">Video: How Solar Flares Affect Earth</a>
+                        <a href="https://www.youtube.com/watch?v=wOfm2z_t0zI" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">Video: Scientists Answer Top Space Weather Questions (Part 1)</a>
+                        <a href="https://www.youtube.com/watch?v=sVsOK132fW0" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">Video: Scientists Answer Top Space Weather Questions (Part 2)</a>
+                        <a href="https://www.youtube.com/watch?v=l8kDA45222E" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">Video: Space Weather Vocabulary</a>
+                        <a href="https://www.noaa.gov/education/resource-collections/weather-atmosphere/space-weather" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">NOAA: Five Things About Space Weather</a>
+                        <a href="https://www.youtube.com/watch?v=fHR_Yv0g-s4" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">Video: NASA Spacecraft Track Solar Storms</a>
+                        <a href="https://www.youtube.com/watch?v=iMy217e25lE" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">Video: X-Class: A Guide to Solar Flares</a>
+                    </div>
+
+                    <h3 class="text-xl font-bold text-yellow-200 mt-6 mb-3">Space Agency Partner Resources</h3>
+                    <div class="space-y-2 text-sm">
+                        <a href="https://www.spaceweather.gc.ca/" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">Canadian Space Agency (CSA): Space Weather Canada</a>
+                        <a href="https://www.spaceweather.gc.ca/learn-apprendre/index-en.php" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">CSA: Space Weather over Canada</a>
+                        <a href="http://www.inpe.br/spaceweather/" target="_blank" class="block bg-gray-700 hover:bg-gray-600 p-2 rounded-lg transition-colors">Brazilian Space Agency (AEB): EMBRACE Program</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="absolute bottom-4 left-4 z-10">
+            <button id="prev-btn" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-4 rounded-full transition-opacity duration-300 opacity-0 cursor-not-allowed">
+                &larr; Prev
+            </button>
+        </div>
+        <div class="absolute bottom-4 right-4 z-10">
+            <button id="next-btn" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-4 rounded-full transition-opacity duration-300 opacity-100">
+                Next &rarr;
+            </button>
+        </div>
+    </div>
+
+    <!-- Modals (Fun Facts) -->
+    <div id="astronaut-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3 class="text-2xl font-bold text-yellow-300">Fun Fact!</h3>
+            <p class="mt-4 text-lg">Astronauts wear special spacesuits and can shelter in their spacecraft to stay safe from the extra energy (called radiation) that comes from big solar flares like Sunny!</p>
+        </div>
+    </div>
+     <div id="radio-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3 class="text-2xl font-bold text-yellow-300">Fun Fact!</h3>
+            <p class="mt-4 text-lg">Solar flares can energize a part of Earth's sky called the ionosphere. This can absorb radio waves, making it hard for pilots to talk to people on the ground.</p>
+        </div>
+    </div>
+    <div id="gps-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3 class="text-2xl font-bold text-yellow-300">Fun Fact!</h3>
+            <p class="mt-4 text-lg">GPS (Global Positioning System) works by using signals from satellites in space. Space weather can bend or delay these signals, which can make GPS maps a little less accurate for a short time.</p>
+        </div>
+    </div>
+
+    <script>
+        // --- Storybook Navigation Logic ---
+        const pages = document.querySelectorAll('.storybook-page');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        let currentPage = 1;
+        const totalPages = pages.length;
+
+        function updateButtons() {
+            prevBtn.classList.toggle('opacity-0', currentPage === 1);
+            prevBtn.classList.toggle('cursor-not-allowed', currentPage === 1);
+            nextBtn.classList.toggle('opacity-0', currentPage === totalPages);
+            nextBtn.classList.toggle('cursor-not-allowed', currentPage === totalPages);
+        }
+
+        function showPage(pageNumber) {
+            pages.forEach(page => {
+                if (parseInt(page.dataset.page) === pageNumber) {
+                    page.classList.add('active');
+                    page.classList.remove('fade-in');
+                    void page.offsetWidth; // Trigger reflow to restart animation
+                    page.classList.add('fade-in');
+                } else {
+                    page.classList.remove('active');
+                }
+            });
+            currentPage = pageNumber;
+            updateButtons();
+        }
+
+        nextBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) showPage(currentPage + 1);
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 1) showPage(currentPage - 1);
+        });
+
+        // --- Modal Logic ---
+        const infoIcons = document.querySelectorAll('.info-icon');
+        infoIcons.forEach(icon => {
+            icon.addEventListener('click', (e) => {
+                const modalId = e.target.dataset.modal;
+                document.getElementById(modalId).style.display = 'block';
+            });
+        });
+
+        const closeButtons = document.querySelectorAll('.close-button');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.target.closest('.modal').style.display = 'none';
+            });
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
+        });
+
+        // Initialize Storybook
+        showPage(1);
+
+        // --- Gemini API Feature: "Ask Sunny" ---
+        const chatContainer = document.getElementById('chat-container');
+        const chatInput = document.getElementById('chat-input');
+        const chatSendBtn = document.getElementById('chat-send');
+        const chatLoading = document.getElementById('chat-loading');
+
+        const apiKey = ""; // API key will be provided by the environment
+
+        const systemPrompt = "Act as Sunny, a friendly, cheerful, and super-excited solar flare character from the storybook 'Space Spark'. Your best friend is Earth. Answer the user's question in a simple, fun, and scientifically accurate way that a 6-8 year old child can understand. Keep your answers very short (1-3 sentences). Always stay in character. Use exclamation points, happy language, and maybe a fun sound word like 'Whee!' or 'Zing!'. Never break character or say you are an AI.";
+
+        async function callGeminiApi(userQuery) {
+            chatLoading.classList.remove('hidden');
+            chatLoading.classList.add('flex');
+            chatSendBtn.disabled = true;
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            let response;
+            try {
+                 response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API call failed with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+                
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const sunnyResponse = candidate.content.parts[0].text;
+                    addMessageToChat('sunny', sunnyResponse);
+                } else {
+                    addMessageToChat('sunny', "Whoops! My energy is a bit scrambled. Could you ask that again? Zing!");
+                }
+
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                addMessageToChat('sunny', "Oh no! A little space fog is blocking my thoughts. Please try again in a moment!");
+            } finally {
+                chatLoading.classList.add('hidden');
+                chatLoading.classList.remove('flex');
+                chatSendBtn.disabled = false;
+            }
+        }
+
+        function addMessageToChat(sender, message) {
+            const bubble = document.createElement('div');
+            bubble.classList.add('chat-bubble');
+            bubble.textContent = message;
+
+            if (sender === 'user') {
+                bubble.classList.add('user-bubble');
+            } else {
+                bubble.classList.add('sunny-bubble');
+            }
+            chatContainer.appendChild(bubble);
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Auto-scroll to bottom
+        }
+
+        function handleSendMessage() {
+            const userMessage = chatInput.value.trim();
+            if (userMessage) {
+                addMessageToChat('user', userMessage);
+                callGeminiApi(userMessage);
+                chatInput.value = '';
+            }
+        }
+        
+        chatSendBtn.addEventListener('click', handleSendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSendMessage();
+            }
+        });
+
+    </script>
+</body>
+</html>
+
